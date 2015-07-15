@@ -5,7 +5,7 @@ var expect = require('chai').expect;
 var bioData = require('./fixtures/bioData.json');
 
 describe('DeepModel', function() {
-	describe('#has', function() {
+	describe('#changedAttributes', function() {
 
 		it('changedAttributes(): returns changed attributes', function() {
 			var model = new DeepModel(bioData);
