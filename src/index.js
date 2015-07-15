@@ -9,117 +9,6 @@ try {
 	var bb = window.Backbone;
 }
 
-/**
- * Takes a nested object and returns a shallow object keyed with the path names
- * e.g. { "level1.level2": "value" }
- *
- * @param  {Object}      Nested object e.g. { level1: { level2: 'value' } }
- * @return {Object}      Shallow object with path names e.g. { 'level1.level2': 'value' }
- */
-function objToPaths(obj) {
-	var ret = {},
-		separator = DeepModel.keyPathSeparator;
-
-	for (var key in obj) {
-		var val = obj[key];
-
-		if (val && (val.constructor === Object || val.constructor === Array) && !_.isEmpty(val)) {
-			//Recursion for embedded objects
-			var obj2 = objToPaths(val);
-
-			for (var key2 in obj2) {
-				var val2 = obj2[key2];
-
-				ret[key + separator + key2] = val2;
-			}
-		} else {
-			ret[key] = val;
-		}
-	}
-
-	return ret;
-}
-
-/**
- * [getNested description]
- * @param  {object} obj           to fetch attribute from
- * @param  {string} path          path e.g. 'user.name'
- * @param  {[type]} return_exists [description]
- * @return {mixed}                [description]
- */
-function getNested(obj, path, return_exists) {
-	var separator = DeepModel.keyPathSeparator;
-
-	var fields = path ? path.split(separator) : [];
-	var result = obj;
-	return_exists || (return_exists === false);
-	for (var i = 0, n = fields.length; i < n; i++) {
-		if (return_exists && !_.has(result, fields[i])) {
-			return false;
-		}
-		result = result[fields[i]];
-
-		if (result == null && i < n - 1) {
-			result = {};
-		}
-
-		if (typeof result === 'undefined') {
-			if (return_exists) {
-				return true;
-			}
-			return result;
-		}
-	}
-	if (return_exists) {
-		return true;
-	}
-	return result;
-}
-
-
-
-/**
- * @param {Object} obj                Object to fetch attribute from
- * @param {String} path               Object path e.g. 'user.name'
- * @param {Object} [options]          Options
- * @param {Boolean} [options.unset]   Whether to delete the value
- * @param {Mixed}                     Value to set
- */
-function setNested(obj, path, val, options) {
-	options = options || {};
-
-	var separator = DeepModel.keyPathSeparator;
-
-	var fields = path ? path.split(separator) : [];
-	var result = obj;
-	for (var i = 0, n = fields.length; i < n && result !== undefined; i++) {
-		var field = fields[i];
-
-		//If the last in the path, set the value
-		if (i === n - 1) {
-			options.unset ? delete result[field] : result[field] = val;
-		} else {
-			//Create the child object if it doesn't exist, or isn't an object
-			if (typeof result[field] === 'undefined' || !_.isObject(result[field])) {
-				// If trying to remove a field that doesn't exist, then there's no need
-				// to create its missing parent (doing so causes a problem with
-				// hasChanged()).
-				if (options.unset) {
-					delete result[field]; // in case parent exists but is not an object
-					return;
-				}
-				var nextField = fields[i + 1];
-
-				// create array if next field is integer, else create object
-				result[field] = /^\d+$/.test(nextField) ? [] : {};
-			}
-
-			//Move onto the next part of the path
-			result = result[field];
-		}
-	}
-}
-
 function deleteNested(obj, path) {
     var parts = path.split(/[.\[\]]/g),
         last, parent;
@@ -199,27 +88,6 @@ var DeepModel = bb.Model.extend({
 		// Check for changes of `id`.
 		if (this.idAttribute in attrs) this.id = attrs[this.idAttribute];
 
-		//<custom code>
-		//attrs = objToPaths(attrs);
-		//</custom code>
-
-		// For each `set` attribute, update or delete the current value.
-		/*
-		for (attr in attrs) {
-			val = attrs[attr];
-
-			//<custom code>: Using getNested, setNested and deleteNested
-			if (!_.isEqual(getNested(current, attr), val)) changes.push(attr);
-			if (!_.isEqual(getNested(prev, attr), val)) {
-				setNested(this.changed, attr, val);
-			} else {
-				deleteNested(this.changed, attr);
-			}
-			unset ? deleteNested(current, attr) : setNested(current, attr, val);
-			//</custom code>
-		}
-         */
-
         _.each(attrs, function (val, key) {
             if (!_.isEqual(_.get(current, key), val)) { changes.push(key); }
             if (!_.isEqual(_.get(prev, key), val)) {
@@ -257,41 +125,6 @@ var DeepModel = bb.Model.extend({
                     parentKey = parentKey.replace(regex, '');
                 }, this);
             }, this);
-            /*
-			//<custom code>
-			var separator = DeepModel.keyPathSeparator;
-			var alreadyTriggered = {}; // * @restorer
-
-            for (var i = 0, l = changes.length; i < l; i++) {
-				var key = changes[i];
-
-				if (!alreadyTriggered.hasOwnProperty(key) || !alreadyTriggered[key]) { // * @restorer
-					alreadyTriggered[key] = true; // * @restorer
-					this.trigger('change:' + key, this, getNested(current, key), options);
-				} // * @restorer
-
-				var fields = key.split(separator);
-
-				//Trigger change events for parent keys with wildcard (*) notation
-				for (var n = fields.length - 1; n > 0; n--) {
-					var parentKey = fields.slice(0, n).join(separator),
-						wildcardKey = parentKey + separator + '*';
-
-					if (!alreadyTriggered.hasOwnProperty(wildcardKey) || !alreadyTriggered[wildcardKey]) { // * @restorer
-						alreadyTriggered[wildcardKey] = true; // * @restorer
-						this.trigger('change:' + wildcardKey, this, getNested(current, parentKey), options);
-					} // * @restorer
-
-					// + @restorer
-					if (!alreadyTriggered.hasOwnProperty(parentKey) || !alreadyTriggered[parentKey]) {
-						alreadyTriggered[parentKey] = true;
-						this.trigger('change:' + parentKey, this, getNested(current, parentKey), options);
-					}
-					// - @restorer
-				}
-				//</custom code>
-			}
-            */
 		}
 
 		if (changing) return this;
@@ -309,10 +142,11 @@ var DeepModel = bb.Model.extend({
 	// Clear all attributes on the model, firing `"change"` unless you choose
 	// to silence it.
 	clear: function(options) {
-		var attrs = {};
-		var shallowAttributes = objToPaths(this.attributes);
-		for (var key in shallowAttributes) attrs[key] = void 0;
-		return this.set(attrs, _.extend({}, options, {
+		var attrs = _.reduce(_.keys(this.attributes), function (obj, key) {
+            return obj[key] = void 0;
+        }, {});
+
+        return this.set(attrs, _.extend({}, options, {
 			unset: true
 		}));
 	},
@@ -354,7 +188,7 @@ var DeepModel = bb.Model.extend({
 			return null;
 		}
 
-		return _get(this._previousAttributes, attr);
+		return _.get(this._previousAttributes, attr);
 	},
 
 	// Get all of the attributes of the model at the time of the previous
