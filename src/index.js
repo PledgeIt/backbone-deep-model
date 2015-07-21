@@ -10,8 +10,14 @@ try {
 }
 
 module.exports = function () {
+	var DeepModel;
+
+	function toPath(str) {
+		return str.split(DeepModel.keyPathSeparator);
+	}
+
 	function deleteNested(obj, path) {
-	    var parts = path.split(/[.\[\]]/g),
+	    var parts = _.isArray(path) ? path : toPath(path),
 	        last, parent;
 
 	    // Handle if removing top-level property
@@ -19,15 +25,15 @@ module.exports = function () {
 	        return delete obj[path];
 	    }
 
-	    last = parts.pop(),
-	    parent = path.replace(new RegExp(last + '$'), '').replace(/.$/, '');
+	    last = parts.pop();
+		parent = _.get(obj, parts.join('.'));
 
-	    if (_.has(obj, path)) {
-	        _.set(obj, parent, _.omit(_.get(obj, parent), last));
+	    if (_.isObject(parent)) {
+			delete parent[last];
 	    }
 	}
 
-	var DeepModel = bb.Model.extend({
+	DeepModel = bb.Model.extend({
 
 		// Override constructor
 		// Support having nested defaults by using _.deepExtend instead of _.extend
@@ -51,7 +57,7 @@ module.exports = function () {
 		// Override get
 		// Supports nested attributes via the syntax 'obj.attr' e.g. 'author.user.name'
 		get: function(attr) {
-	        return _.get(this.attributes, attr);
+	        return _.get(this.attributes, toPath(attr));
 		},
 
 		// Override set
@@ -90,13 +96,14 @@ module.exports = function () {
 			if (this.idAttribute in attrs) this.id = attrs[this.idAttribute];
 
 	        _.each(attrs, function (val, key) {
-	            if (!_.isEqual(_.get(current, key), val)) { changes.push(key); }
-	            if (!_.isEqual(_.get(prev, key), val)) {
+				var keyPath = toPath(key);
+				if (!_.isEqual(_.get(current, keyPath), val)) { changes.push(key); }
+	            if (!_.isEqual(_.get(prev, keyPath), val)) {
 	                this.changed[key] = val;
 	            } else {
 	                delete this.changed[key];
 	            }
-	            unset ? deleteNested(current, key) : _.set(current, key, val);
+	            unset ? deleteNested(current, keyPath) : _.set(current, keyPath, val);
 	        }, this);
 
 			// Trigger all relevant attribute changes.
@@ -106,18 +113,14 @@ module.exports = function () {
 	            var alreadyTriggered = {};
 
 	            _.each(changes, function (key) {
-					var parts = _.without(key.split(/[.\[\]]/g), ''),
+					var parts = toPath(key),
 	                    parentKey = '',
 						eventsToTrigger = {};
 
 						_.each(parts, function (part, n) {
 							var changedVal;
 
-							if (_.isFinite(+part)) {
-								parentKey += '[' + part + ']';
-							} else {
-								parentKey += (n === 0) ? part : '.' + part;
-							}
+							parentKey += (n === 0) ? part : DeepModel.keyPathSeparator + part;
 
 							if (_.isUndefined(alreadyTriggered[parentKey])) {
 								changedVal = _.get(current, parentKey);
@@ -207,6 +210,9 @@ module.exports = function () {
 	        return _.cloneDeep(this._previousAttributes);
 		}
 	});
+
+	//Config; override in your app to customise
+	DeepModel.keyPathSeparator = '.';
 
 	return DeepModel;
 }();
