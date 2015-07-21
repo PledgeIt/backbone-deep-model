@@ -51,7 +51,7 @@ module.exports = function () {
 
 		// Return a copy of the model's `attributes` object.
 		toJSON: function(options) {
-	        return _.cloneDeep(this.attributes);
+			return _.cloneDeep(this.attributes);
 		},
 
 		// Override get
@@ -115,28 +115,29 @@ module.exports = function () {
 	            _.each(changes, function (key) {
 					var parts = toPath(key),
 	                    parentKey = '',
-						eventsToTrigger = {};
+						eventsToTrigger = {},
+						isFirst = true,
+						eventName, currentValue;
 
-						_.each(parts, function (part, n) {
-							var changedVal;
+						do {
+							eventName = parts.join('.');
 
-							parentKey += (n === 0) ? part : DeepModel.keyPathSeparator + part;
+							// Don't need to continue if we're hitting events
+							// that have already been triggered
+							if (alreadyTriggered[eventName]) { break; }
 
-							if (_.isUndefined(alreadyTriggered[parentKey])) {
-								changedVal = _.get(current, parentKey);
+							// Grab the current value
+							currentValue = _.get(current, parts);
 
-								eventsToTrigger[parentKey] = changedVal;
+							// Trigger the events, including wildcard if the
+							// first run-through
+							if (!isFirst) { this.trigger('change:' + eventName + '.*', this, currentValue); }
+							this.trigger('change:' + eventName, this, currentValue);
 
-								if (n < parts.length - 1) {
-									eventsToTrigger[parentKey + '.*'] = changedVal;
-								}
-							}
-						});
-
-						_.eachRight(eventsToTrigger, function (val, key) {
-							this.trigger('change:' + key, this, val);
-							alreadyTriggered[key] = val;
-						}, this);
+							alreadyTriggered[eventName] = true;
+							isFirst = false;
+							parts.pop();
+						} while (parts.length);
 	            }, this);
 			}
 
@@ -171,7 +172,7 @@ module.exports = function () {
 				return !_.isEmpty(this.changed);
 			}
 
-			return !_.isUndefined(_.get(this.changed, attr));
+			return !_.isUndefined(_.get(this.changed, toPath(attr)));
 		},
 
 		// Return an object containing all the attributes that have changed, or
@@ -201,7 +202,7 @@ module.exports = function () {
 				return null;
 			}
 
-			return _.get(this._previousAttributes, attr);
+			return _.get(this._previousAttributes, toPath(attr));
 		},
 
 		// Get all of the attributes of the model at the time of the previous
