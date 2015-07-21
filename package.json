@@ -1,10 +1,13 @@
 {
   "name": "backbone-deep-model-lodash",
-  "version": "2.0.1",
+  "version": "1.0.0",
   "description": "Improved support for models with nested attributes.",
-  "author": {
-    "name": "Charles Davison"
-  },
+  "author": "Josh Lasdin <josh@pldgit.com>",
+  "contributors": [
+      {
+        "name": "Charles Davison"
+      }
+  ],
   "scripts": {
     "build": "gulp",
     "test": "./node_modules/mocha/bin/mocha -u bdd",
@@ -13,9 +16,7 @@
   },
   "dependencies": {
     "backbone": "^1.0.0",
-    "jquery": "^2.1.3",
-    "lodash": "^3.10.0",
-    "underscore": "^1.8.3"
+    "lodash": "^3.10.0"
   },
   "devDependencies": {
     "browserify": "^9.0.3",
@@ -34,6 +35,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:kahwee/backbone-deep-model.git"
+    "url": "git@github.com:PledgeIt/backbone-deep-model.git"
   }
 }
