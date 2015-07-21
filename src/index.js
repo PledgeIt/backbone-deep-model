@@ -156,15 +156,11 @@ module.exports = function () {
 		// Clear all attributes on the model, firing `"change"` unless you choose
 		// to silence it.
 		clear: function(options) {
-			var attrs = _.reduce(_.keys(this.attributes), function (obj, key) {
-	            return obj[key] = void 0;
-	        }, {});
-
-	        return this.set(attrs, _.extend({}, options, {
-				unset: true
-			}));
-		},
-
+			var attrs = {};
+			for (var key in this.attributes) attrs[key] = void 0;
+			return this.set(attrs, _.extend({}, options, {unset: true}));
+	    },
+		
 		// Determine if the model has changed since the last `"change"` event.
 		// If you specify an attribute name, determine if that attribute has changed.
 		hasChanged: function (attr) {
