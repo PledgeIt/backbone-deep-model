@@ -117,11 +117,10 @@ module.exports = function () {
 	                    parentKey = '',
 						eventsToTrigger = {},
 						isFirst = true,
-						eventName, currentValue;
+						eventName = key,
+						currentValue;
 
 						do {
-							eventName = parts.join('.');
-
 							// Don't need to continue if we're hitting events
 							// that have already been triggered
 							if (alreadyTriggered[eventName]) { break; }
@@ -137,6 +136,7 @@ module.exports = function () {
 							alreadyTriggered[eventName] = true;
 							isFirst = false;
 							parts.pop();
+							eventName = parts.join('.');
 						} while (parts.length);
 	            }, this);
 			}
@@ -172,7 +172,7 @@ module.exports = function () {
 				return !_.isEmpty(this.changed);
 			}
 
-			return !_.isUndefined(_.get(this.changed, toPath(attr)));
+			return !_.isUndefined(_.get(this.changed, attr));
 		},
 
 		// Return an object containing all the attributes that have changed, or
