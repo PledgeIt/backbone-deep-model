@@ -51,7 +51,7 @@ module.exports = function () {
 
 		// Return a copy of the model's `attributes` object.
 		toJSON: function(options) {
-			return _.cloneDeep(this.attributes);
+			return _.merge({}, this.attributes);
 		},
 
 		// Override get
@@ -87,7 +87,7 @@ module.exports = function () {
 			this._changing = true;
 
 			if (!changing) {
-				this._previousAttributes = _.cloneDeep(this.attributes);
+				this._previousAttributes = _.merge({}, this.attributes);
 				this.changed = {};
 			}
 			current = this.attributes, prev = this._previousAttributes;
@@ -160,7 +160,7 @@ module.exports = function () {
 			for (var key in this.attributes) attrs[key] = void 0;
 			return this.set(attrs, _.extend({}, options, {unset: true}));
 	    },
-		
+
 		// Determine if the model has changed since the last `"change"` event.
 		// If you specify an attribute name, determine if that attribute has changed.
 		hasChanged: function (attr) {
@@ -204,7 +204,7 @@ module.exports = function () {
 		// Get all of the attributes of the model at the time of the previous
 		// `"change"` event.
 		previousAttributes: function() {
-	        return _.cloneDeep(this._previousAttributes);
+	        return _.merge({}, this._previousAttributes);
 		}
 	});
 
