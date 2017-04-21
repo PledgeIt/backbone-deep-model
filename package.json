@@ -4,19 +4,15 @@
   "description": "Improved support for models with nested attributes.",
   "author": "Josh Lasdin <josh@pldgit.com>",
   "contributors": [
-      {
-        "name": "Charles Davison"
-      }
+    {
+      "name": "Charles Davison"
+    }
   ],
   "scripts": {
     "build": "gulp",
     "test": "./node_modules/mocha/bin/mocha -u bdd",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "coverage-html": "istanbul cover ./node_modules/mocha/bin/_mocha -- "
-  },
-  "dependencies": {
-    "backbone": "^1.0.0",
-    "lodash": "^3.10.0"
   },
   "devDependencies": {
     "browserify": "^9.0.3",
@@ -36,5 +32,9 @@
   "repository": {
     "type": "git",
     "url": "git@github.com:PledgeIt/backbone-deep-model.git"
+  },
+  "peerDependencies": {
+    "backbone": "^1.3.3",
+    "lodash": "^4.17.4"
   }
 }

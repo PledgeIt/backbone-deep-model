@@ -109,7 +109,7 @@ module.exports = function () {
 	                delete this.changed[key];
 	            }
 	            unset ? deleteNested(current, keyPath) : _.set(current, keyPath, val);
-	        }, this);
+	        }.bind(this));
 
 			// Trigger all relevant attribute changes.
 			if (!silent) {
@@ -143,7 +143,7 @@ module.exports = function () {
 							poppedKey = parts.pop();
 							eventName = eventName.slice(0, -(poppedKey.length + 1));
 						} while (parts.length);
-	            }, this);
+	            }.bind(this));
 			}
 
 			if (changing) return this;
@@ -191,7 +191,7 @@ module.exports = function () {
 	            }
 
 	            return obj;
-	        }, {}, this);
+	        }.bind(this), {});
 
 	        return _.isEmpty(changed) ? false : changed;
 		},
